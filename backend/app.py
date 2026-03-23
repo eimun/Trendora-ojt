@@ -14,7 +14,9 @@ init_db()
 
 # Run migrations
 from migrations.add_virality_score import migrate as add_virality
+from migrations.add_ojt_features import migrate as add_ojt_features
 add_virality()
+add_ojt_features()
 
 # Register blueprints
 from auth import auth_bp
