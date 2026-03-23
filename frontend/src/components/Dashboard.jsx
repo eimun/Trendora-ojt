@@ -49,6 +49,7 @@ function Dashboard() {
 
     useEffect(() => {
         checkPreferenceAndFetch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bookmark, TrendingUp, Edit3, Trash2, CheckCircle2, MessageSquarePlus } from 'lucide-react';
 import { API_URL } from '../config';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 function SavedTrends() {
     const [trends, setTrends] = useState([]);
