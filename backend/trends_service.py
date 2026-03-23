@@ -13,7 +13,7 @@ NICHE_KEYWORDS = {
     'health': ['nutrition', 'mental health', 'workout', 'sleep', 'meditation']
 }
 
-def fetch_trends_for_niche(niche):
+def fetch_trends_for_niche(niche, geo='US'):
     """Fetch trending topics for a specific niche"""
     
     keywords = NICHE_KEYWORDS.get(niche.lower(), ['trending'])
@@ -23,7 +23,7 @@ def fetch_trends_for_niche(niche):
     for keyword in keywords:
         try:
             # Build payload
-            pytrends.build_payload([keyword], timeframe='now 7-d', geo='US')
+            pytrends.build_payload([keyword], timeframe='now 7-d', geo=geo)
             
             # Get interest over time
             interest = pytrends.interest_over_time()
@@ -51,7 +51,7 @@ def fetch_trends_for_niche(niche):
     # If pytrends returned nothing (rate limited / blocked), use fallback data
     if not trends_data:
         print(f"⚠️ pytrends returned no data for {niche}, using fallback trends")
-        trends_data = get_fallback_trends(niche)
+        trends_data = get_fallback_trends(niche, geo=geo)
     
     return trends_data
 
@@ -61,10 +61,10 @@ import xml.etree.ElementTree as ET
 import re
 import random
 
-def get_fallback_trends(niche):
+def get_fallback_trends(niche, geo='US'):
     """Fetch live data from Google Trends RSS as a reliable fallback for cloud servers"""
     try:
-        url = "https://trends.google.com/trending/rss?geo=US"
+        url = f"https://trends.google.com/trending/rss?geo={geo}"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
             xml_data = response.read()
@@ -88,12 +88,10 @@ def get_fallback_trends(niche):
                 'keyword': title,
                 'volume': numeric_traffic,
                 'velocity': velocity,
-                'niche': niche  # Assign requested niche so the UI grouping still works
+                'niche': niche
             })
             
-        # Shuffle to show slightly different subsets for different niches
-        random.shuffle(live_trends)
-        return live_trends[:6]
+        return live_trends
         
     except Exception as e:
         print(f"RSS Fallback failed: {e}")

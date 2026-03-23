@@ -10,6 +10,7 @@ def fetch_trends():
     try:
         data = request.json
         niche = data.get('niche', 'tech')
+        geo = data.get('geo', 'US')
         
         # Check cache first
         cached = get_cached_trends(niche, max_age_hours=2)
@@ -21,7 +22,7 @@ def fetch_trends():
             })
         
         # Fetch fresh data
-        trends = fetch_trends_for_niche(niche)
+        trends = fetch_trends_for_niche(niche, geo=geo)
         
         if trends:
             try:

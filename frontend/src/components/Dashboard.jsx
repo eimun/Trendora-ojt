@@ -1,62 +1,154 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-
 
 import { API_URL } from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, TrendingUp, Bookmark, CheckCircle2, ChevronDown, Globe, Clock, Filter, BarChart3 } from 'lucide-react';
+import { Activity, TrendingUp, Bookmark, CheckCircle2, ChevronDown, Globe, Clock, Filter, BarChart3, Zap } from 'lucide-react';
 
+/* ───────── Constants ───────── */
+const LOCATIONS = [
+    { code: 'US', label: '🇺🇸 United States' },
+    { code: 'IN', label: '🇮🇳 India' },
+    { code: 'GB', label: '🇬🇧 United Kingdom' },
+    { code: 'CA', label: '🇨🇦 Canada' },
+    { code: 'AU', label: '🇦🇺 Australia' },
+    { code: 'DE', label: '🇩🇪 Germany' },
+    { code: 'FR', label: '🇫🇷 France' },
+    { code: 'JP', label: '🇯🇵 Japan' },
+    { code: 'BR', label: '🇧🇷 Brazil' },
+];
+
+const CATEGORIES = [
+    { value: 'all', label: 'All categories' },
+    { value: 'tech', label: 'Tech & AI' },
+    { value: 'finance', label: 'Business & Finance' },
+    { value: 'health', label: 'Health' },
+    { value: 'lifestyle', label: 'Lifestyle' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'sports', label: 'Sports' },
+];
+
+const SORT_OPTIONS = [
+    { value: 'relevance', label: 'Relevance' },
+    { value: 'volume_desc', label: 'Search volume ↓' },
+    { value: 'volume_asc', label: 'Search volume ↑' },
+    { value: 'title', label: 'Title (A-Z)' },
+];
+
+const TREND_STATUS = [
+    { value: 'all', label: 'All trends' },
+    { value: 'hot', label: '🔥 Hot only' },
+    { value: 'rising', label: '📈 Rising only' },
+];
+
+/* ───────── Dropdown Component ───────── */
+function FilterDropdown({ icon: Icon, label, value, options, onChange, accent }) {
+    const bgClass = accent
+        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+        : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700';
+    const textClass = accent
+        ? 'text-purple-700 dark:text-purple-300'
+        : 'text-gray-700 dark:text-gray-300';
+    const iconClass = accent ? 'text-purple-500' : 'text-gray-400';
+
+    return (
+        <div className={`relative flex items-center gap-2 px-4 py-2.5 border rounded-lg font-medium cursor-pointer hover:shadow-sm transition-all ${bgClass} ${textClass}`}>
+            <Icon size={16} className={iconClass} />
+            <select
+                className="bg-transparent outline-none cursor-pointer appearance-none pr-5 font-semibold text-sm"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            >
+                {options.map(opt => (
+                    <option key={opt.value || opt.code} value={opt.value || opt.code}>
+                        {opt.label}
+                    </option>
+                ))}
+            </select>
+            <ChevronDown size={14} className={`absolute right-3 pointer-events-none ${iconClass}`} />
+        </div>
+    );
+}
+
+/* ───────── Main Dashboard ───────── */
 function Dashboard() {
-    const [selectedNiche, setSelectedNiche] = useState('tech');
+    const [geo, setGeo] = useState('US');
+    const [category, setCategory] = useState('all');
     const [sortBy, setSortBy] = useState('relevance');
-    const [trends, setTrends] = useState([]);
+    const [trendStatus, setTrendStatus] = useState('all');
+    const [allTrends, setAllTrends] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const fetchTrends = async (niche) => {
+    const fetchTrends = async (niche, geoCode) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(
                 `${API_URL}/api/trends/fetch`,
-                { niche },
+                { niche, geo: geoCode },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            setTrends(response.data.trends);
+            setAllTrends(response.data.trends);
         } catch (error) {
             console.error('Failed to fetch trends');
         }
         setLoading(false);
     };
 
-    // Check preference
-    const checkPreferenceAndFetch = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/auth/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.data.default_niche) {
-                setSelectedNiche(res.data.default_niche);
-                fetchTrends(res.data.default_niche);
-                return;
-            }
-        } catch (e) {
-            console.error('Failed to get preferences, using default tech', e);
-        }
-        fetchTrends('tech');
-    };
-
+    // On mount: check user preference
     useEffect(() => {
-        checkPreferenceAndFetch();
+        const init = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/api/auth/profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data.default_niche) {
+                    setCategory(res.data.default_niche);
+                    fetchTrends(res.data.default_niche, geo);
+                    return;
+                }
+            } catch (e) {
+                console.error('Failed to get preferences', e);
+            }
+            fetchTrends('all', geo);
+        };
+        init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Re-fetch when geo or category changes
     useEffect(() => {
-        // This useEffect will run when selectedNiche changes,
-        // including the initial change from checkPreferenceAndFetch
-        fetchTrends(selectedNiche);
-    }, [selectedNiche]);
+        fetchTrends(category, geo);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [geo, category]);
+
+    /* ─── Client-side filter + sort ─── */
+    const displayedTrends = useMemo(() => {
+        let filtered = [...allTrends];
+
+        // Status filter
+        if (trendStatus === 'hot') {
+            filtered = filtered.filter(t => t.velocity === 'rising_fast' || t.velocity === 'breakout');
+        } else if (trendStatus === 'rising') {
+            filtered = filtered.filter(t => t.velocity === 'rising');
+        }
+
+        // Sort
+        if (sortBy === 'volume_desc') {
+            filtered.sort((a, b) => (b.volume || 0) - (a.volume || 0));
+        } else if (sortBy === 'volume_asc') {
+            filtered.sort((a, b) => (a.volume || 0) - (b.volume || 0));
+        } else if (sortBy === 'title') {
+            filtered.sort((a, b) => (a.keyword || '').localeCompare(b.keyword || ''));
+        }
+        // 'relevance' keeps original order
+
+        return filtered;
+    }, [allTrends, trendStatus, sortBy]);
+
+    const currentLocation = LOCATIONS.find(l => l.code === geo)?.label || geo;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
@@ -71,61 +163,68 @@ function Dashboard() {
                         <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Trending Topics Dashboard</h1>
                     </motion.div>
 
-                    {/* Filter Bar */}
+                    {/* ────── Google Trends-style Filter Bar ────── */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mb-8 flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
+                        className="mb-8 flex flex-wrap gap-3 items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
                     >
-                        {/* Location (Mock) */}
-                        <div className="relative flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium">
-                            <Globe size={16} className="text-gray-400" />
-                            <span>United States</span>
-                            <ChevronDown size={14} className="ml-2 text-gray-400" />
-                        </div>
+                        <FilterDropdown
+                            icon={Globe}
+                            label="Location"
+                            value={geo}
+                            options={LOCATIONS}
+                            onChange={setGeo}
+                        />
 
-                        {/* Time Range (Mock) */}
-                        <div className="relative flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium">
-                            <Clock size={16} className="text-gray-400" />
-                            <span>Past 24 hours</span>
-                            <ChevronDown size={14} className="ml-2 text-gray-400" />
-                        </div>
+                        <FilterDropdown
+                            icon={Clock}
+                            label="Time"
+                            value="24h"
+                            options={[{ value: '24h', label: 'Past 24 hours' }]}
+                            onChange={() => { }}
+                        />
 
-                        {/* Category (Actual functionality) */}
-                        <div className="relative flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg text-purple-700 dark:text-purple-300 font-bold cursor-pointer hover:bg-purple-100 transition-colors">
-                            <Filter size={16} className="text-purple-500" />
-                            <select
-                                className="bg-transparent outline-none cursor-pointer appearance-none pr-6"
-                                value={selectedNiche}
-                                onChange={(e) => setSelectedNiche(e.target.value)}
-                            >
-                                <option value="tech">Tech & AI</option>
-                                <option value="finance">Finance</option>
-                                <option value="health">Health</option>
-                                <option value="lifestyle">Lifestyle</option>
-                            </select>
-                            <ChevronDown size={14} className="absolute right-4 text-purple-500 pointer-events-none" />
-                        </div>
+                        <FilterDropdown
+                            icon={Filter}
+                            label="Category"
+                            value={category}
+                            options={CATEGORIES}
+                            onChange={setCategory}
+                            accent
+                        />
+
+                        <FilterDropdown
+                            icon={Zap}
+                            label="Status"
+                            value={trendStatus}
+                            options={TREND_STATUS}
+                            onChange={setTrendStatus}
+                        />
 
                         <div className="flex-grow"></div>
 
-                        {/* Sort By (Actual functionality) */}
-                        <div className="relative flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium cursor-pointer hover:bg-gray-100 transition-colors">
-                            <span className="text-gray-500 text-sm">Sort by</span>
-                            <BarChart3 size={16} className="text-gray-400 ml-1" />
-                            <select
-                                className="bg-transparent outline-none cursor-pointer appearance-none font-bold pr-6"
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                            >
-                                <option value="relevance">Relevance</option>
-                                <option value="volume">Search Volume</option>
-                            </select>
-                            <ChevronDown size={14} className="absolute right-4 text-gray-400 pointer-events-none" />
-                        </div>
+                        <FilterDropdown
+                            icon={BarChart3}
+                            label="Sort by"
+                            value={sortBy}
+                            options={SORT_OPTIONS}
+                            onChange={setSortBy}
+                        />
                     </motion.div>
 
-
+                    {/* Stats bar */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Showing <span className="font-bold text-gray-900 dark:text-white">{displayedTrends.length}</span> trends from <span className="font-bold text-gray-900 dark:text-white">{currentLocation}</span>
+                        </p>
+                        <button
+                            onClick={() => fetchTrends(category, geo)}
+                            className="text-sm text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                        >
+                            🔄 Refresh
+                        </button>
+                    </div>
 
                     {/* Trends Grid */}
                     {loading ? (
@@ -137,16 +236,16 @@ function Dashboard() {
                                 <Activity className="w-12 h-12 text-purple-600 dark:text-purple-400" />
                             </motion.div>
                         </div>
-                    ) : trends.length === 0 ? (
+                    ) : displayedTrends.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-12 text-center text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700"
                         >
                             <p className="text-2xl font-medium mb-2 text-gray-900 dark:text-gray-100">No trends found</p>
-                            <p className="mb-6">Try selecting a different niche or refresh the page.</p>
+                            <p className="mb-6">Try selecting a different category or change the status filter.</p>
                             <button
-                                onClick={() => fetchTrends(selectedNiche)}
+                                onClick={() => fetchTrends(category, geo)}
                                 className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-lg shadow-purple-500/20 font-medium"
                             >
                                 Retry Fetching
@@ -160,16 +259,13 @@ function Dashboard() {
                                 hidden: { opacity: 0 },
                                 show: {
                                     opacity: 1,
-                                    transition: { staggerChildren: 0.1 }
+                                    transition: { staggerChildren: 0.08 }
                                 }
                             }}
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
-                            {[...trends].sort((a, b) => {
-                                if (sortBy === 'volume') return (b.volume || 0) - (a.volume || 0);
-                                return 0; // Default: relevance/original order
-                            }).map((trend, index) => (
-                                <TrendCard key={index} trend={trend} />
+                            {displayedTrends.map((trend, index) => (
+                                <TrendCard key={`${trend.keyword}-${index}`} trend={trend} />
                             ))}
                         </motion.div>
                     )}
@@ -179,6 +275,7 @@ function Dashboard() {
     );
 }
 
+/* ───────── TrendCard ───────── */
 function TrendCard({ trend }) {
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [toastMsg, setToastMsg] = useState('');
@@ -204,7 +301,6 @@ function TrendCard({ trend }) {
         }
     };
 
-    // Mock realistic chart data based on volume and velocity
     const chartData = [
         { name: 'Day 1', volume: trend.volume * 0.3 },
         { name: 'Day 2', volume: trend.volume * 0.45 },
