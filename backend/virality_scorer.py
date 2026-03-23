@@ -1,5 +1,5 @@
-from youtube_service import search_videos_by_keyword
 import math
+import random
 
 def calculate_virality_score(trend):
     """
@@ -37,10 +37,10 @@ def calculate_virality_score(trend):
     else:
         score += 10
     
-    # FACTOR 3: Competition (0-30 points)
-    # Lower competition = higher score
+    # Competition (0-30 points)
+    # Mocking competition for OJT simple project
     keyword = trend.get('keyword', '')
-    competitor_count = search_videos_by_keyword(keyword, max_results=50)
+    competitor_count = random.randint(5, 500)
     
     if competitor_count < 10:
         score += 30  # Almost no competition!
