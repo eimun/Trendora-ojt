@@ -8,7 +8,6 @@ import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, TrendingUp, Bookmark, CheckCircle2, ChevronDown, Globe, Clock, Filter, BarChart3 } from 'lucide-react';
 
 function Dashboard() {
-    const [niches] = useState(['tech', 'finance', 'lifestyle', 'health']);
     const [selectedNiche, setSelectedNiche] = useState('tech');
     const [sortBy, setSortBy] = useState('relevance');
     const [trends, setTrends] = useState([]);
