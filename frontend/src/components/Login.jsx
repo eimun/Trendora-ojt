@@ -49,10 +49,13 @@ function Login() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <input
+                            id="email"
+                            name="email"
                             type="email"
                             placeholder="Email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoComplete="email"
                             className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white transition-all outline-none"
                             required
                         />
@@ -60,10 +63,13 @@ function Login() {
 
                     <div>
                         <input
+                            id="password"
+                            name="password"
                             type="password"
                             placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            autoComplete={isRegister ? "new-password" : "current-password"}
                             className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white transition-all outline-none"
                             required
                         />
