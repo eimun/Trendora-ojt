@@ -348,8 +348,15 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange })
     const [isBookmarked, setIsBookmarked] = useState(initialBookmarked);
     const [toastMsg, setToastMsg] = useState('');
 
+
     const handleBookmark = async (e) => {
         e.stopPropagation();
+        if (isBookmarked) return; // Already saved, do nothing
+
+        // Optimistic update — mark as saved instantly for snappy UX
+        setIsBookmarked(true);
+        setToastMsg('Saving...');
+
         try {
             const token = localStorage.getItem('token');
             await axios.post(`${API_URL}/api/bookmarks/`, {
@@ -359,21 +366,22 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange })
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setIsBookmarked(true);
             if (onBookmarkChange) onBookmarkChange(trend.keyword);
             setToastMsg('Saved!');
             setTimeout(() => setToastMsg(''), 2000);
         } catch (error) {
-            // If already saved (400), still mark it as bookmarked visually
             if (error.response?.status === 400) {
-                setIsBookmarked(true);
+                // Already saved in DB — keep it marked as saved
                 setToastMsg('Already saved!');
             } else {
+                // Real error — revert the optimistic update
+                setIsBookmarked(false);
                 setToastMsg('Failed to save');
             }
             setTimeout(() => setToastMsg(''), 2000);
         }
     };
+
 
     const chartData = [
         { name: 'Day 1', volume: trend.volume * 0.3 },
