@@ -88,8 +88,12 @@ def get_profile():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, email, default_niche FROM users WHERE id = %s", (user_id,))
+    cur.execute("SELECT id, email, created_at, default_niche FROM users WHERE id = %s", (user_id,))
     user = cur.fetchone()
+
+    cur.execute("SELECT COUNT(*) FROM saved_trends WHERE user_id = %s", (user_id,))
+    saved_count = cur.fetchone()[0]
+
     cur.close()
     conn.close()
 
@@ -99,7 +103,9 @@ def get_profile():
     return jsonify({
         "id": user[0],
         "email": user[1],
-        "default_niche": user[2] or 'tech'
+        "created_at": user[2].isoformat() if user[2] else None,
+        "default_niche": user[3] or 'tech',
+        "saved_count": saved_count
     }), 200
 
 @auth_bp.route('/preferences', methods=['PUT'])

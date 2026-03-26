@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
-    Moon, Sun, LogOut, ChevronLeft, ChevronRight, Bookmark, User
+    Moon, Sun, LogOut, ChevronLeft, ChevronRight, Bookmark, User, X
 } from 'lucide-react';
 
 const navItems = [
@@ -12,7 +12,7 @@ const navItems = [
     { icon: Bookmark, label: 'Saved Trends', path: '/saved-trends' },
 ];
 
-function Sidebar() {
+function Sidebar({ mobileOpen, setMobileOpen }) {
     const location = useLocation();
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
@@ -43,12 +43,30 @@ function Sidebar() {
         navigate('/');
     };
 
+    const closeMobile = () => {
+        if (setMobileOpen) setMobileOpen(false);
+    };
+
     return (
-        <motion.aside
-            animate={{ width: collapsed ? 72 : 240 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="fixed left-0 top-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col shadow-sm"
-        >
+        <>
+            {/* Mobile Overlay */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={closeMobile}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+                    />
+                )}
+            </AnimatePresence>
+
+            <motion.aside
+                animate={{ width: collapsed ? 72 : 240 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className={`fixed left-0 top-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col shadow-sm transition-transform duration-300 transform lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
             {/* Brand */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800">
                 <AnimatePresence>
@@ -65,9 +83,15 @@ function Sidebar() {
                 </AnimatePresence>
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
+                    className="hidden lg:block p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
                 >
                     {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                </button>
+                <button
+                    onClick={closeMobile}
+                    className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
+                >
+                    <X size={20} />
                 </button>
             </div>
 
@@ -88,6 +112,7 @@ function Sidebar() {
                         <Link
                             key={item.path}
                             to={item.path}
+                            onClick={closeMobile}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative group ${isActive
                                 ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
                                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300'
@@ -128,6 +153,7 @@ function Sidebar() {
             <div className="p-3 border-t border-gray-100 dark:border-gray-800 space-y-1">
                 <NavLink
                     to="/profile"
+                    onClick={closeMobile}
                     className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${isActive
                             ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
@@ -183,6 +209,7 @@ function Sidebar() {
                 </button>
             </div>
         </motion.aside>
+        </>
     );
 }
 

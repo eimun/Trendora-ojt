@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Settings, Save, CheckCircle2 } from 'lucide-react';
+import { User, Settings, Save, CheckCircle2, Calendar, Bookmark } from 'lucide-react';
 import { API_URL } from '../config';
 import { motion } from 'framer-motion';
 
 function Profile() {
-    const [profile, setProfile] = useState({ email: '', default_niche: 'tech' });
+    const [profile, setProfile] = useState({ email: '', default_niche: 'tech', created_at: null, saved_count: 0 });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -20,7 +20,12 @@ function Profile() {
             const res = await axios.get(`${API_URL}/api/auth/profile`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setProfile({ email: res.data.email, default_niche: res.data.default_niche });
+            setProfile({ 
+                email: res.data.email, 
+                default_niche: res.data.default_niche,
+                created_at: res.data.created_at,
+                saved_count: res.data.saved_count
+            });
         } catch (error) {
             console.error('Error fetching profile:', error);
         } finally {
@@ -74,7 +79,16 @@ function Profile() {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">{profile.email}</h2>
-                            <p className="text-gray-500 dark:text-gray-400">Manage your personalized dashboard experience</p>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                <span className="flex items-center gap-1.5">
+                                    <Calendar size={14} /> 
+                                    Joined {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'recently'}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Bookmark size={14} /> 
+                                    {profile.saved_count || 0} Saved Trends
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

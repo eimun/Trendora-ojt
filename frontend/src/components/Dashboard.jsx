@@ -4,7 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-import { Activity, TrendingUp, Bookmark, CheckCircle2, ChevronDown, Globe, Clock, Filter, BarChart3, Zap } from 'lucide-react';
+import { Activity, TrendingUp, Bookmark, CheckCircle2, ChevronDown, Globe, Clock, Filter, BarChart3, Zap, Search } from 'lucide-react';
+import TrendModal from './TrendModal';
 
 /* ───────── Constants ───────── */
 const LOCATIONS = [
@@ -119,6 +120,8 @@ function Dashboard() {
     const [allTrends, setAllTrends] = useState([]);
     const [loading, setLoading] = useState(false);
     const [savedKeywords, setSavedKeywords] = useState(new Set());
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTrend, setSelectedTrend] = useState(null);
 
     const fetchTrends = async (niche, geoCode) => {
         setLoading(true);
@@ -181,6 +184,12 @@ function Dashboard() {
     /* ─── Client-side filter + sort ─── */
     const displayedTrends = useMemo(() => {
         let filtered = [...allTrends];
+
+        // Search query filter
+        if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(t => (t.keyword || '').toLowerCase().includes(query));
+        }
 
         // Status filter
         if (trendStatus === 'hot') {
@@ -251,6 +260,20 @@ function Dashboard() {
                             options={TREND_STATUS}
                             onChange={setTrendStatus}
                         />
+
+                        {/* Search Bar */}
+                        <div className="relative flex-grow max-w-xs ml-2">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search size={16} className="text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search trends..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="block w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-gray-700 rounded-full leading-5 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent sm:text-sm transition-all"
+                            />
+                        </div>
 
                         <div className="flex-grow"></div>
 
@@ -332,6 +355,7 @@ function Dashboard() {
                                         index={index + 1}
                                         initialBookmarked={savedKeywords.has((trend.keyword || '').toLowerCase())}
                                         onBookmarkChange={(keyword) => setSavedKeywords(prev => new Set([...prev, keyword.toLowerCase()]))}
+                                        onClick={() => setSelectedTrend(trend)}
                                     />
                                 ))}
                             </div>
@@ -339,12 +363,24 @@ function Dashboard() {
                     )}
                 </div>
             </div>
+
+            {/* Slide-in Detail Modal */}
+            <AnimatePresence>
+                {selectedTrend && (
+                    <TrendModal
+                        trend={selectedTrend}
+                        isBookmarked={savedKeywords.has((selectedTrend.keyword || '').toLowerCase())}
+                        onClose={() => setSelectedTrend(null)}
+                        onBookmarkChange={(keyword) => setSavedKeywords(prev => new Set([...prev, keyword.toLowerCase()]))}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
 /* ───────── TrendRow (List View) ───────── */
-function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange }) {
+function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange, onClick }) {
     const [isBookmarked, setIsBookmarked] = useState(initialBookmarked);
     const [toastMsg, setToastMsg] = useState('');
 
@@ -405,11 +441,12 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange })
 
     return (
         <motion.div
+            onClick={onClick}
             variants={{
                 hidden: { opacity: 0, x: -10 },
                 show: { opacity: 1, x: 0 }
             }}
-            className="group grid grid-cols-12 gap-4 items-center p-4 border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors last:border-0"
+            className="group grid grid-cols-12 gap-4 items-center p-4 border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors last:border-0 cursor-pointer"
         >
             {/* Rank / Index */}
             <div className="col-span-1 text-center font-semibold text-gray-400 dark:text-gray-500">
@@ -421,11 +458,18 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange })
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white capitalize mb-1 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                     {trend.keyword}
                 </h3>
-                {isHot && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400">
-                        <TrendingUp size={12} /> Active
-                    </span>
-                )}
+                <div className="flex items-center gap-2 mt-1">
+                    {trend.niche && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 capitalize border border-gray-200 dark:border-gray-700 shadow-sm">
+                            {trend.niche}
+                        </span>
+                    )}
+                    {isHot && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-widest bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">
+                            <TrendingUp size={10} /> Hot
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Search Volume */}
@@ -438,13 +482,24 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange })
 
             {/* Virality Score */}
             <div className="col-span-2 hidden md:flex flex-col items-center justify-center">
-                <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    {trend.virality_score || 0} / 100
+                <div className="flex items-baseline gap-1">
+                    <span className={`text-lg font-black ${
+                        (trend.virality_score || 0) >= 80 ? 'text-red-500' :
+                        (trend.virality_score || 0) >= 50 ? 'text-orange-500' :
+                        'text-emerald-500'
+                    }`}>
+                        {trend.virality_score || 0}
+                    </span>
+                    <span className="text-xs font-bold text-gray-400">/ 100</span>
                 </div>
                 {trend.virality_score > 0 && (
-                    <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1.5 overflow-hidden">
+                    <div className="w-20 bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mt-2 overflow-hidden border border-gray-200 dark:border-gray-700">
                         <div
-                            className={`h-full ${isHot ? 'bg-red-500' : 'bg-green-500'}`}
+                            className={`h-full rounded-full transition-all duration-1000 ${
+                                trend.virality_score >= 80 ? 'bg-gradient-to-r from-red-500 to-orange-500' :
+                                trend.virality_score >= 50 ? 'bg-gradient-to-r from-orange-500 to-yellow-500' :
+                                'bg-gradient-to-r from-emerald-400 to-teal-400'
+                            }`}
                             style={{ width: `${trend.virality_score}%` }}
                         />
                     </div>

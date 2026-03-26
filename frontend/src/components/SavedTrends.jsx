@@ -50,35 +50,46 @@ function SavedTrends() {
     };
 
     const handleAddNote = async (trendId) => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/notes/${trendId}`, {
-                note_text: 'New note...'
-            }, { headers: { Authorization: `Bearer ${token}` } });
-
-            setTrends(trends.map(t => {
-                if (t.id === trendId) {
-                    return { ...t, notes: [...t.notes, res.data.note] };
-                }
-                return t;
-            }));
-            setEditingNoteId(res.data.note.id);
-            setNoteDraft('New note...');
-        } catch (e) {
-            console.error('Add note failed:', e);
-        }
+        const tempId = `temp-${Date.now()}`;
+        setTrends(trends.map(t => {
+            if (t.id === trendId) {
+                return { ...t, notes: [...t.notes, { id: tempId, note_text: '', is_new: true }] };
+            }
+            return t;
+        }));
+        setEditingNoteId(tempId);
+        setNoteDraft('');
     };
 
     const handleUpdateNote = async (trendId, noteId) => {
+        if (!noteDraft.trim()) {
+            setErrorMsg('Note text cannot be empty');
+            setTimeout(() => setErrorMsg(''), 3000);
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`${API_URL}/api/notes/${noteId}`, {
-                note_text: noteDraft
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            let savedNoteId = noteId;
+
+            if (typeof noteId === 'string' && noteId.startsWith('temp-')) {
+                // Post new note
+                const res = await axios.post(`${API_URL}/api/notes/${trendId}`, {
+                    note_text: noteDraft
+                }, { headers: { Authorization: `Bearer ${token}` } });
+                savedNoteId = res.data.note.id;
+            } else {
+                // Update existing note
+                await axios.put(`${API_URL}/api/notes/${noteId}`, {
+                    note_text: noteDraft
+                }, { headers: { Authorization: `Bearer ${token}` } });
+            }
 
             setTrends(trends.map(t => {
                 if (t.id === trendId) {
-                    const updatedNotes = t.notes.map(n => n.id === noteId ? { ...n, note_text: noteDraft } : n);
+                    const updatedNotes = t.notes.map(n => 
+                        n.id === noteId ? { ...n, id: savedNoteId, note_text: noteDraft, is_new: false } : n
+                    );
                     return { ...t, notes: updatedNotes };
                 }
                 return t;
@@ -87,7 +98,22 @@ function SavedTrends() {
             showMsg('Note saved');
         } catch (e) {
             console.error('Update note failed:', e);
+            setErrorMsg('Failed to save note');
+            setTimeout(() => setErrorMsg(''), 3000);
         }
+    };
+
+    const handleCancelEdit = (trendId, noteId) => {
+        if (typeof noteId === 'string' && noteId.startsWith('temp-')) {
+            // remove temp note from state
+            setTrends(trends.map(t => {
+                if (t.id === trendId) {
+                    return { ...t, notes: t.notes.filter(n => n.id !== noteId) };
+                }
+                return t;
+            }));
+        }
+        setEditingNoteId(null);
     };
 
     const handleDeleteNote = async (trendId, noteId) => {
@@ -204,13 +230,15 @@ function SavedTrends() {
                                                 {editingNoteId === note.id ? (
                                                     <div>
                                                         <textarea
+                                                            autoFocus
                                                             value={noteDraft}
                                                             onChange={(e) => setNoteDraft(e.target.value)}
                                                             className="w-full bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none mb-3"
                                                             rows="3"
+                                                            placeholder="Write a content idea..."
                                                         />
                                                         <div className="flex gap-2 justify-end">
-                                                            <button onClick={() => setEditingNoteId(null)} className="px-3 py-1.5 text-sm font-semibold text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
+                                                            <button onClick={() => handleCancelEdit(trend.id, note.id)} className="px-3 py-1.5 text-sm font-semibold text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
                                                             <button onClick={() => handleUpdateNote(trend.id, note.id)} className="px-3 py-1.5 text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors">Save</button>
                                                         </div>
                                                     </div>
