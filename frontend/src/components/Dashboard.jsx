@@ -122,8 +122,16 @@ function Dashboard() {
     const [savedKeywords, setSavedKeywords] = useState(new Set());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTrend, setSelectedTrend] = useState(null);
+    const [trendsCache, setTrendsCache] = useState({});
 
     const fetchTrends = async (niche, geoCode) => {
+        const cacheKey = `${niche}-${geoCode}`;
+        
+        if (trendsCache[cacheKey]) {
+            setAllTrends(trendsCache[cacheKey]);
+            return;
+        }
+
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
@@ -133,10 +141,17 @@ function Dashboard() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setAllTrends(response.data.trends);
+            setTrendsCache(prev => ({ ...prev, [cacheKey]: response.data.trends }));
         } catch (error) {
             console.error('Failed to fetch trends');
         }
         setLoading(false);
+    };
+
+    // Force refresh button bypasses cache
+    const handleRefresh = () => {
+        setTrendsCache(prev => ({ ...prev, [`${category}-${geo}`]: null }));
+        fetchTrends(category, geo);
     };
 
     // On mount: load saved bookmarks + check user preference
@@ -291,7 +306,7 @@ function Dashboard() {
                             Showing <span className="font-bold text-gray-900 dark:text-white">{displayedTrends.length}</span> trends from <span className="font-bold text-gray-900 dark:text-white">{currentLocation}</span>
                         </p>
                         <button
-                            onClick={() => fetchTrends(category, geo)}
+                            onClick={handleRefresh}
                             className="text-sm text-purple-600 dark:text-purple-400 hover:underline font-medium"
                         >
                             🔄 Refresh
