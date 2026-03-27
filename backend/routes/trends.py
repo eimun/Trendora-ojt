@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from auth import token_required
 from trends_service import fetch_trends_for_niche, cache_trends_to_db, get_cached_trends
+from virality_scorer import calculate_virality_score
 
 trends_bp = Blueprint('trends', __name__)
 
@@ -15,6 +16,12 @@ def fetch_trends():
         # Always fetch fresh RSS data so geo/category changes work instantly
         trends = fetch_trends_for_niche(niche, geo=geo)
         
+        # Attach virality score so frontend UI components have access to it
+        for t in trends:
+            if 'virality_score' not in t:
+                score_data = calculate_virality_score(t)
+                t['virality_score'] = score_data['score']
+
         if trends:
             try:
                 cache_trends_to_db(trends)
