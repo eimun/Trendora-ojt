@@ -43,4 +43,4 @@ def generate_trend_summary(keyword, niche, volume, velocity):
         return response.text
     except Exception as e:
         print(f"❌ Error generating AI summary for {keyword}: {e}")
-        return "We couldn't generate an AI summary for this trend at the moment. Please try again later."
+        return f"AI Error details: {str(e)}"
