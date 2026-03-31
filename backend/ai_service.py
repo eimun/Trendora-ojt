@@ -34,7 +34,7 @@ def generate_trend_summary(keyword, niche, volume, velocity):
 
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.7,
