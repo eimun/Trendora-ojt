@@ -2,22 +2,45 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Bookmark, CheckCircle2, TrendingUp, Sparkles, MessageSquarePlus } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
     const navigate = useNavigate();
     const [saving, setSaving] = useState(false);
     const [toastMsg, setToastMsg] = useState('');
+    const [aiSummary, setAiSummary] = useState('');
+    const [isAiLoading, setIsAiLoading] = useState(true);
 
     if (!trend) return null;
 
     const isHot = trend.velocity === 'rising_fast' || trend.velocity === 'breakout';
 
-    const getSummary = () => {
-        const vel = trend.velocity.replace('_', ' ');
-        return `Search interest for "${trend.keyword}" is currently showing a ${vel} trajectory across major platforms. With an estimated search volume of ${trend.volume.toLocaleString()}+ searches, this indicates strong audience engagement in the ${trend.niche || 'general'} category.`;
-    };
+    useEffect(() => {
+        if (!trend) return;
+        
+        const fetchAISummary = async () => {
+            setIsAiLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.post(`${API_URL}/api/trends/analyze`, {
+                    keyword: trend.keyword,
+                    niche: trend.niche,
+                    volume: trend.volume,
+                    velocity: trend.velocity
+                }, { headers: { Authorization: `Bearer ${token}` } });
+                
+                setAiSummary(response.data.summary);
+            } catch (error) {
+                console.error("Failed to fetch AI summary:", error);
+                setAiSummary("We couldn't generate an AI summary for this trend at the moment. Please try again later.");
+            } finally {
+                setIsAiLoading(false);
+            }
+        };
+
+        fetchAISummary();
+    }, [trend]);
 
     const handleOverlayClick = (e) => {
         if (e.target.id === 'modal-overlay') onClose();
@@ -112,10 +135,22 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             <Sparkles size={18} className="text-purple-500" /> AI Trend Summary
                         </h3>
-                        <div className="bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30 p-5 rounded-2xl">
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
-                                {getSummary()}
-                            </p>
+                        <div className="bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30 p-5 rounded-2xl min-h-[100px] relative overflow-hidden">
+                            {isAiLoading ? (
+                                <div className="space-y-2 animate-pulse">
+                                    <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded w-full"></div>
+                                    <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded w-11/12"></div>
+                                    <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded w-4/5"></div>
+                                </div>
+                            ) : (
+                                <motion.p 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm"
+                                >
+                                    {aiSummary}
+                                </motion.p>
+                            )}
                         </div>
                     </div>
 
