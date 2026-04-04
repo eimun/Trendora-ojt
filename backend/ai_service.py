@@ -1,26 +1,25 @@
 import os
-from google import genai
-from google.genai import types
+from groq import Groq
 
-# Initialize the Gemini Client
-api_key = os.getenv("GEMINI_API_KEY")
+# Initialize the Groq Client
+api_key = os.getenv("GROQ_API_KEY")
 
 try:
     if api_key:
-        client = genai.Client(api_key=api_key)
+        client = Groq(api_key=api_key)
     else:
         client = None
-        print("⚠️ GEMINI_API_KEY not found in environment variables. AI features will be disabled.")
+        print("⚠️ GROQ_API_KEY not found in environment variables. AI features will be disabled.")
 except Exception as e:
     client = None
-    print(f"⚠️ Failed to initialize Gemini Client: {e}")
+    print(f"⚠️ Failed to initialize Groq Client: {e}")
 
 def generate_trend_summary(keyword, niche, volume, velocity):
     """
     Generate a 2-3 sentence insight about why a trend is currently popular.
     """
     if not client:
-        return "AI analysis is currently unavailable because the Gemini API key is missing."
+        return "AI analysis is currently unavailable because the Groq API key is missing."
 
     prompt = f"""
     You are an expert data analyst and trend forecaster. 
@@ -33,14 +32,14 @@ def generate_trend_summary(keyword, niche, volume, velocity):
     """
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-            )
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.1-8b-instant",
+            temperature=0.7,
         )
-        return response.text
+        return chat_completion.choices[0].message.content
     except Exception as e:
         print(f"❌ Error generating AI summary for {keyword}: {e}")
         return "We couldn't generate an AI summary for this trend at the moment. Please try again later."
