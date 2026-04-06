@@ -7,6 +7,7 @@ api_key = os.getenv("GROQ_API_KEY")
 try:
     if api_key:
         client = Groq(api_key=api_key)
+        print("✅ Groq AI Client initialized successfully.")
     else:
         client = None
         print("⚠️ GROQ_API_KEY not found in environment variables. AI features will be disabled.")
@@ -16,7 +17,14 @@ except Exception as e:
 
 def generate_trend_summary(keyword, niche, volume, velocity):
     """
-    Generate a 2-3 sentence insight about why a trend is currently popular.
+    Generates a witty 2-3 sentence insight about a trending topic using the Groq API (Llama 3).
+    Returns a fallback string if the API fails or no key is provided.
+    
+    Args:
+        keyword (str): The trending search term (e.g., 'React Hooks')
+        niche (str): The category (e.g., 'tech')
+        volume (int): Approximate search volume
+        velocity (str): Growth speed ('rising', 'breakout', etc.)
     """
     if not client:
         return "AI analysis is currently unavailable because the Groq API key is missing."
