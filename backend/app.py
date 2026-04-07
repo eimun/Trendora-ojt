@@ -42,6 +42,11 @@ def health_check():
 from error_handlers import register_error_handlers
 register_error_handlers(app)
 
+from middleware import security_headers
+@app.after_request
+def apply_security_headers(response):
+    return security_headers(response)
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     app.run(host='0.0.0.0', port=port, debug=True)

@@ -45,8 +45,8 @@ def validate_json(*required_fields):
     return decorator
 
 
-def cors_headers(response):
-    """Add CORS headers to response"""
+def security_headers(response):
+    """Add essential global security headers to response"""
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
