@@ -3,9 +3,15 @@ from psycopg2.extras import RealDictCursor
 import os
 
 def get_db_connection():
-    # Enforce sslmode=require for local connections to Render DBs
-    conn = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
-    return conn
+    """Create a database connection, enforcing SSL only for remote databases."""
+    db_url = os.getenv('DATABASE_URL')
+    
+    # If using local database for development, don't force SSL
+    if db_url and ('localhost' in db_url or '127.0.0.1' in db_url):
+        return psycopg2.connect(db_url)
+        
+    # Enforce sslmode=require for remote connections (like Render databases)
+    return psycopg2.connect(db_url, sslmode='require')
 
 def init_db():
     conn = get_db_connection()
