@@ -39,6 +39,11 @@ def save_trend():
         if 'conn' in locals() and conn:
             conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 @bookmarks_bp.route('/', methods=['GET'])
 @token_required
