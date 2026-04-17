@@ -22,6 +22,15 @@ def rate_limiter(max_requests=30, window_seconds=60):
                 return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
 
             requests_log[ip].append(now)
+            
+            # Prevent memory leak by routinely cleaning up dictionary keys for inactive IPs
+            if len(requests_log[ip]) == 1:
+                # Basic garbage collection: clean out fully empty IP records
+                empty_ips = [k for k, v in requests_log.items() if not v or (now - v[-1] >= window_seconds)]
+                for k in empty_ips:
+                    if k != ip:
+                        del requests_log[k]
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
