@@ -21,8 +21,13 @@ def setup_logger(name='trendora'):
     log_dir = os.path.join(os.path.dirname(__file__), 'logs')
     os.makedirs(log_dir, exist_ok=True)
 
-    file_handler = logging.FileHandler(
-        os.path.join(log_dir, f'trendora_{datetime.now().strftime("%Y%m%d")}.log')
+    from logging.handlers import TimedRotatingFileHandler
+    
+    file_handler = TimedRotatingFileHandler(
+        os.path.join(log_dir, 'trendora.log'),
+        when='midnight',
+        interval=1,
+        backupCount=7
     )
     file_handler.setLevel(logging.DEBUG)
     file_format = logging.Formatter(
