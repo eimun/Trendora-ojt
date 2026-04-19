@@ -43,7 +43,14 @@ def register():
         return jsonify({"token": token, "user_id": user_id}), 201
         
     except psycopg2.IntegrityError:
+        if 'conn' in locals() and conn:
+            conn.rollback()
         return jsonify({"error": "Email already exists"}), 400
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
