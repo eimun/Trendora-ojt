@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request
 from auth import token_required
 from trends_service import fetch_trends_for_niche, cache_trends_to_db, get_cached_trends
 from virality_scorer import calculate_virality_score
-from ai_service import generate_trend_analysis
+from ai_service import generate_trend_analysis, generate_script
+from database import get_db_connection
 
 trends_bp = Blueprint('trends', __name__)
 
@@ -57,3 +58,50 @@ def analyze_trend():
     except Exception as e:
         print(f"❌ Error in analyze_trend: {e}")
         return jsonify({"error": "Failed to analyze trend"}), 500
+
+
+@trends_bp.route('/script', methods=['POST'])
+@token_required
+def write_script():
+    try:
+        data = request.json
+        keyword = data.get('keyword', '')
+        niche = data.get('niche', 'general')
+
+        if not keyword:
+            return jsonify({"error": "Keyword is required"}), 400
+
+        script = generate_script(keyword, niche)
+        return jsonify({"script": script})
+    except Exception as e:
+        print(f"❌ Error in write_script: {e}")
+        return jsonify({"error": "Failed to generate script"}), 500
+
+
+@trends_bp.route('/leaderboard', methods=['GET'])
+@token_required
+def leaderboard():
+    """Returns the top 10 most bookmarked trends across all users in the past 7 days."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT keyword, COUNT(*) as saves, AVG(volume) as avg_volume
+            FROM saved_trends
+            WHERE created_at >= NOW() - INTERVAL '7 days'
+            GROUP BY keyword
+            ORDER BY saves DESC
+            LIMIT 10
+        """)
+        rows = cur.fetchall()
+        results = [
+            {"rank": i + 1, "keyword": row[0], "saves": row[1], "avg_volume": int(row[2] or 0)}
+            for i, row in enumerate(rows)
+        ]
+        return jsonify({"leaderboard": results})
+    except Exception as e:
+        print(f"❌ Error in leaderboard: {e}")
+        return jsonify({"error": str(e), "leaderboard": []}), 500
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()

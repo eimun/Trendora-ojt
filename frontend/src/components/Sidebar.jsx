@@ -3,13 +3,16 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
-    Moon, Sun, LogOut, ChevronLeft, ChevronRight, Bookmark, User, X
+    Moon, Sun, LogOut, ChevronLeft, ChevronRight, Bookmark, User, X, Trophy, BarChart3
 } from 'lucide-react';
 
 const navItems = [
     { label: 'Core', type: 'heading' },
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Bookmark, label: 'Saved Trends', path: '/saved-trends' },
+    { label: 'Insights', type: 'heading' },
+    { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
+    { icon: BarChart3, label: 'My Analytics', path: '/analytics' },
 ];
 
 function Sidebar({ mobileOpen, setMobileOpen }) {

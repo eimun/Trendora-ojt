@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-import { X, Bookmark, CheckCircle2, TrendingUp, Sparkles, MessageSquarePlus, Copy, Search, Zap, Lightbulb, Hash } from 'lucide-react';
+import { X, Bookmark, CheckCircle2, TrendingUp, Sparkles, MessageSquarePlus, Copy, Search, Zap, Lightbulb, Hash, Clapperboard, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { useState, useEffect, useCallback } from 'react';
@@ -13,6 +13,8 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
     const [aiAnalysis, setAiAnalysis] = useState(null);
     const [isAiLoading, setIsAiLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [script, setScript] = useState('');
+    const [isScriptLoading, setIsScriptLoading] = useState(false);
 
     const fetchAISummary = useCallback(async () => {
         if (!trend) return;
@@ -25,7 +27,6 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                 volume: trend.volume,
                 velocity: trend.velocity
             }, { headers: { Authorization: `Bearer ${token}` } });
-            
             setAiAnalysis(response.data);
         } catch (error) {
             console.error("Failed to fetch AI analysis:", error);
@@ -37,6 +38,8 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
 
     useEffect(() => {
         fetchAISummary();
+        setScript('');
+        setActiveTab('overview');
     }, [fetchAISummary]);
 
     const handleCopySummary = () => {
@@ -46,18 +49,36 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
         setTimeout(() => setToastMsg(''), 2000);
     };
 
+    const handleWriteScript = async () => {
+        if (isScriptLoading) return;
+        setScript('');
+        setIsScriptLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/api/trends/script`, {
+                keyword: trend.keyword,
+                niche: trend.niche || 'general'
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setScript(res.data.script);
+        } catch {
+            setScript("Couldn't generate script. Please try again.");
+        } finally {
+            setIsScriptLoading(false);
+        }
+    };
+
     if (!trend) return null;
 
     const isHot = trend.velocity === 'rising_fast' || trend.velocity === 'breakout';
 
     const chartData = [
-        { name: 'Day 1', volume: trend.volume * 0.3 },
-        { name: 'Day 2', volume: trend.volume * 0.45 },
-        { name: 'Day 3', volume: trend.volume * 0.4 },
-        { name: 'Day 4', volume: trend.volume * 0.6 },
-        { name: 'Day 5', volume: trend.volume * 0.8 },
-        { name: 'Day 6', volume: isHot ? trend.volume * 1.5 : trend.volume * 0.9 },
-        { name: 'Day 7', volume: isHot ? trend.volume * 2.1 : trend.volume },
+        { name: 'D1', volume: trend.volume * 0.3 },
+        { name: 'D2', volume: trend.volume * 0.45 },
+        { name: 'D3', volume: trend.volume * 0.4 },
+        { name: 'D4', volume: trend.volume * 0.6 },
+        { name: 'D5', volume: trend.volume * 0.8 },
+        { name: 'D6', volume: isHot ? trend.volume * 1.5 : trend.volume * 0.9 },
+        { name: 'D7', volume: isHot ? trend.volume * 2.1 : trend.volume },
     ];
 
     const formatVolume = (vol) => {
@@ -82,7 +103,6 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                 volume: trend.volume || 1000,
                 velocity: trend.velocity || 'normal'
             }, { headers: { Authorization: `Bearer ${token}` } });
-            
             onBookmarkChange(trend.keyword);
             setToastMsg('Saved successfully!');
         } catch (error) {
@@ -98,26 +118,31 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
     };
 
     const handleAddNote = async () => {
-        if (!isBookmarked) {
-            await handleSave();
-        }
+        if (!isBookmarked) await handleSave();
         navigate('/saved-trends');
     };
 
+    const TABS = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'ideas', label: 'AI Toolkit', Icon: Sparkles },
+        { id: 'script', label: 'Script', Icon: Clapperboard },
+    ];
+
     return (
         <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
-            <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                exit={{ scale: 0.95, opacity: 0 }} 
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10"
+                className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-black/5"
             >
                 <div className="flex-1 overflow-y-auto p-6 md:p-8">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors z-10">
                         <X size={20} />
                     </button>
 
+                    {/* Header */}
                     <div className="mb-6">
                         <div className="flex items-center gap-3 mb-3">
                             {trend.niche && (
@@ -136,21 +161,24 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                         </h2>
                     </div>
 
+                    {/* Tab Bar */}
                     <div className="flex border-b border-gray-100 dark:border-gray-800 mb-6">
-                        <button 
-                            onClick={() => setActiveTab('overview')}
-                            className={`flex-1 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === 'overview' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                        >
-                            Data Overview
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('ideas')}
-                            className={`flex-1 py-3 text-sm font-bold transition-colors border-b-2 flex justify-center items-center gap-2 ${activeTab === 'ideas' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                        >
-                            <Sparkles size={16} /> AI Toolkit
-                        </button>
+                        {TABS.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex-1 py-3 text-sm font-bold transition-colors border-b-2 flex justify-center items-center gap-1.5 ${
+                                    activeTab === tab.id
+                                        ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                            >
+                                {tab.Icon && <tab.Icon size={14} />} {tab.label}
+                            </button>
+                        ))}
                     </div>
 
+                    {/* ─── Overview Tab ─── */}
                     {activeTab === 'overview' && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                             <div className="h-32 w-full bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 pb-0 relative">
@@ -165,15 +193,7 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                                 <stop offset="95%" stopColor={isHot ? "#ef4444" : "#10b981"} stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
-                                        <Area
-                                            type="monotone"
-                                            dataKey="volume"
-                                            stroke={isHot ? "#ef4444" : "#10b981"}
-                                            strokeWidth={3}
-                                            fillOpacity={1}
-                                            fill="url(#colorVol)"
-                                            isAnimationActive={true}
-                                        />
+                                        <Area type="monotone" dataKey="volume" stroke={isHot ? "#ef4444" : "#10b981"} strokeWidth={3} fillOpacity={1} fill="url(#colorVol)" isAnimationActive={true} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -182,9 +202,7 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                 <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/80 dark:to-gray-900/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm relative overflow-hidden">
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-1">Search Volume</p>
                                     <p className="text-3xl font-black text-gray-900 dark:text-white">{formatVolume(trend.volume)}</p>
-                                    <div className="absolute right-0 bottom-0 opacity-5 dark:opacity-10 pointer-events-none transform translate-x-4 translate-y-4">
-                                        <Search size={64} />
-                                    </div>
+                                    <div className="absolute right-0 bottom-0 opacity-5 dark:opacity-10 pointer-events-none transform translate-x-4 translate-y-4"><Search size={64} /></div>
                                 </div>
                                 <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden ${
                                     (trend.virality_score || 0) >= 80 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' :
@@ -192,25 +210,15 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                     'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30'
                                 }`}>
                                     <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${
-                                        (trend.virality_score || 0) >= 80 ? 'text-red-500/80 dark:text-red-400/80' :
-                                        (trend.virality_score || 0) >= 50 ? 'text-orange-500/80 dark:text-orange-400/80' :
-                                        'text-emerald-500/80 dark:text-emerald-400/80'
+                                        (trend.virality_score || 0) >= 80 ? 'text-red-500/80' : (trend.virality_score || 0) >= 50 ? 'text-orange-500/80' : 'text-emerald-500/80'
                                     }`}>Virality Score</p>
                                     <div className="flex items-baseline gap-1 relative z-10">
                                         <p className={`text-3xl font-black ${
-                                            (trend.virality_score || 0) >= 80 ? 'text-red-600 dark:text-red-400' :
-                                            (trend.virality_score || 0) >= 50 ? 'text-orange-600 dark:text-orange-400' :
-                                            'text-emerald-600 dark:text-emerald-400'
+                                            (trend.virality_score || 0) >= 80 ? 'text-red-600 dark:text-red-400' : (trend.virality_score || 0) >= 50 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
                                         }`}>{trend.virality_score || 0}</p>
-                                        <span className={`text-sm font-bold ${
-                                            (trend.virality_score || 0) >= 80 ? 'text-red-400/50 dark:text-red-500/40' :
-                                            (trend.virality_score || 0) >= 50 ? 'text-orange-400/50 dark:text-orange-500/40' :
-                                            'text-emerald-400/50 dark:text-emerald-500/40'
-                                        }`}>/ 100</span>
+                                        <span className="text-sm font-bold text-gray-400">/ 100</span>
                                     </div>
-                                    <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-3 translate-y-3 text-current">
-                                        <Zap size={64} />
-                                    </div>
+                                    <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-3 translate-y-3 text-current"><Zap size={64} /></div>
                                 </div>
                             </div>
 
@@ -239,6 +247,7 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                         </motion.div>
                     )}
 
+                    {/* ─── AI Toolkit Tab ─── */}
                     {activeTab === 'ideas' && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                             {isAiLoading ? (
@@ -250,35 +259,28 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                 <>
                                     <div>
                                         <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                                            <Lightbulb size={16} className="text-yellow-500" />
-                                            Content Creation Hooks
+                                            <Lightbulb size={16} className="text-yellow-500" /> Content Creation Hooks
                                         </h3>
                                         <div className="space-y-3">
-                                            {aiAnalysis?.ideas?.map((idea, idx) => (
+                                            {aiAnalysis?.ideas?.length > 0 ? aiAnalysis.ideas.map((idea, idx) => (
                                                 <div key={idx} className="p-4 bg-yellow-50/50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-xl text-sm text-gray-700 dark:text-gray-300">
                                                     {idea}
                                                 </div>
-                                            )) || (
-                                                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-sm text-gray-500 text-center">
-                                                    No ideas generated. Try again later.
-                                                </div>
+                                            )) : (
+                                                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-sm text-gray-500 text-center">No ideas generated. Try again later.</div>
                                             )}
                                         </div>
                                     </div>
-
                                     <div>
                                         <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                                            <Hash size={16} className="text-blue-500" />
-                                            Target Keywords
+                                            <Hash size={16} className="text-blue-500" /> Target Keywords
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {aiAnalysis?.keywords?.map((kw, idx) => (
+                                            {aiAnalysis?.keywords?.length > 0 ? aiAnalysis.keywords.map((kw, idx) => (
                                                 <span key={idx} className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-bold border border-blue-100 dark:border-blue-900/30">
                                                     {kw}
                                                 </span>
-                                            )) || (
-                                                <span className="text-sm text-gray-500">None generated.</span>
-                                            )}
+                                            )) : <span className="text-sm text-gray-500">None generated.</span>}
                                         </div>
                                     </div>
                                 </>
@@ -286,16 +288,56 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                         </motion.div>
                     )}
 
+                    {/* ─── Script Tab ─── */}
+                    {activeTab === 'script' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <Clapperboard size={16} className="text-orange-500" /> Video Script Generator
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-0.5">60-second TikTok / YouTube Short</p>
+                                </div>
+                                <button
+                                    onClick={handleWriteScript}
+                                    disabled={isScriptLoading}
+                                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-60 shadow-md shadow-orange-500/20"
+                                >
+                                    {isScriptLoading ? <Loader2 size={14} className="animate-spin" /> : <Clapperboard size={14} />}
+                                    {script ? 'Regenerate' : 'Write Script'}
+                                </button>
+                            </div>
+                            {script ? (
+                                <div className="relative group/script bg-gray-900 dark:bg-gray-950 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-mono border border-gray-700/50">
+                                    {script}
+                                    <button
+                                        onClick={() => { navigator.clipboard.writeText(script); setToastMsg('Script copied!'); setTimeout(() => setToastMsg(''), 2000); }}
+                                        className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white opacity-0 group-hover/script:opacity-100 transition-all"
+                                    >
+                                        <Copy size={14} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                                    <Clapperboard size={32} className="mb-3 opacity-40" />
+                                    <p className="text-sm font-bold">Hit the button to generate your script!</p>
+                                    <p className="text-xs text-gray-400 mt-1">Powered by Llama 3.1</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* Action buttons — always visible */}
                     <div className="mt-8 space-y-3">
                         <div className="flex gap-3">
-                            <a 
+                            <a
                                 href={`https://trends.google.com/trends/explore?q=${encodeURIComponent(trend.keyword)}`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold transition-colors text-sm"
                             >
                                 <TrendingUp size={16} /> Google Trends
                             </a>
-                            <a 
+                            <a
                                 href={`https://www.google.com/search?q=${encodeURIComponent(trend.keyword)}`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-xl font-bold transition-colors text-sm"
@@ -303,13 +345,13 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                 <Search size={16} /> Web Search
                             </a>
                         </div>
-                        
+
                         <div className="flex gap-3">
-                            <button 
+                            <button
                                 onClick={handleSave}
                                 disabled={isBookmarked || saving}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-colors ${
-                                    isBookmarked 
+                                    isBookmarked
                                         ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 cursor-default'
                                         : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20'
                                 }`}
@@ -317,8 +359,7 @@ function TrendModal({ trend, isBookmarked, onClose, onBookmarkChange }) {
                                 {isBookmarked ? <CheckCircle2 size={18} /> : <Bookmark size={18} />}
                                 {isBookmarked ? 'Saved' : (saving ? 'Saving...' : 'Bookmark')}
                             </button>
-                            
-                            <button 
+                            <button
                                 onClick={handleAddNote}
                                 className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 bg-white dark:bg-gray-900 border-2 border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl font-bold transition-colors"
                             >

@@ -120,3 +120,52 @@ def delete_saved_trend(trend_id):
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
+
+
+@bookmarks_bp.route('/analytics', methods=['GET'])
+@token_required
+def get_analytics():
+    """Returns personal usage analytics for the logged-in user."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Total saves
+        cur.execute("SELECT COUNT(*) FROM saved_trends WHERE user_id = %s", (request.user_id,))
+        total_saves = cur.fetchone()[0]
+
+        # Saves per niche/category (based on velocity as proxy — use keyword niche if available)
+        cur.execute("""
+            SELECT velocity, COUNT(*) as count
+            FROM saved_trends
+            WHERE user_id = %s
+            GROUP BY velocity
+            ORDER BY count DESC
+        """, (request.user_id,))
+        by_velocity = [{"label": row[0] or "unknown", "count": row[1]} for row in cur.fetchall()]
+
+        # Recent saves (last 6 weeks grouped by week)
+        cur.execute("""
+            SELECT DATE_TRUNC('week', created_at) as week, COUNT(*) as count
+            FROM saved_trends
+            WHERE user_id = %s AND created_at >= NOW() - INTERVAL '6 weeks'
+            GROUP BY week
+            ORDER BY week ASC
+        """, (request.user_id,))
+        over_time = [{"week": row[0].strftime("%b %d"), "saves": row[1]} for row in cur.fetchall()]
+
+        # Most saved category (from velocity labels as a proxy)
+        top_category = by_velocity[0]["label"] if by_velocity else "N/A"
+
+        return jsonify({
+            "total_saves": total_saves,
+            "top_category": top_category,
+            "by_velocity": by_velocity,
+            "over_time": over_time,
+        })
+    except Exception as e:
+        print(f"❌ Error in analytics: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()

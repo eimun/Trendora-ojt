@@ -94,3 +94,36 @@ def generate_chat_response(messages, trend_context):
     except Exception as e:
         print(f"❌ Error in chat generation: {e}")
         return "I seem to have lost my connection to the server. Try asking again in a moment!"
+
+
+def generate_script(keyword, niche):
+    """
+    Generates a 60-second TikTok/YouTube Shorts script for a given trending topic.
+    """
+    if not client:
+        return "AI script generation is disabled. Please set GROQ_API_KEY."
+
+    prompt = f"""
+    Write a punchy 60-second video script for the trending topic: "{keyword}" in the "{niche}" niche.
+
+    The script MUST follow this exact structure:
+    🎬 **HOOK** (First 5 seconds - grab attention): One bold, shocking, or relatable opening line.
+    📌 **POINT 1** (~15 sec): First key fact or insight about {keyword}.
+    📌 **POINT 2** (~15 sec): Second insight — add unique context or contrast.
+    📌 **POINT 3** (~15 sec): Third point — surprising or controversial angle.
+    📣 **CALL TO ACTION** (Last 10 sec): Tell the viewer to like, follow, or comment.
+
+    Keep the total script under 150 words. Make it conversational, energetic, and creator-friendly.
+    Do not add any extra commentary outside the script itself.
+    """
+
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.1-8b-instant",
+            temperature=0.8,
+        )
+        return chat_completion.choices[0].message.content
+    except Exception as e:
+        print(f"❌ Error generating script for {keyword}: {e}")
+        return "Couldn't generate a script right now. Try again in a moment!"
