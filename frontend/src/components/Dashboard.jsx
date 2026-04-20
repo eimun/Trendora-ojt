@@ -245,10 +245,20 @@ function Dashboard() {
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-3 mb-8"
+                        className="flex flex-col md:flex-row md:items-end gap-3 mb-8 justify-between"
                     >
-                        <TrendingUp className="text-purple-600 dark:text-purple-400 w-10 h-10" />
-                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Trending Topics Dashboard</h1>
+                        <div className="flex items-center gap-3">
+                            <TrendingUp className="text-purple-600 dark:text-purple-400 w-10 h-10" />
+                            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Trending Topics</h1>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm font-bold bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <span className="relative flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-300">Live scanning</span>
+                            <span className="text-purple-600 dark:text-purple-400 ml-1">{allTrends.length} trends</span>
+                        </div>
                     </motion.div>
 
                     {/* ────── Google Trends-style Filter Bar ────── */}
@@ -331,13 +341,35 @@ function Dashboard() {
 
                     {/* Trends Grid */}
                     {loading ? (
-                        <div className="flex justify-center items-center py-20">
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"
-                            />
-                        </div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-gray-900/40 rounded-3xl shadow-xl shadow-purple-500/5 border border-white/20 dark:border-gray-800/50 overflow-hidden backdrop-blur-xl mb-[600px]">
+                            {/* Table Header skeleton style */}
+                            <div className="grid grid-cols-12 gap-4 p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded col-span-1 shadow-inner opacity-50"></div>
+                                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded col-span-3 opacity-50"></div>
+                                <div className="col-span-8"></div>
+                            </div>
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="grid grid-cols-12 gap-4 items-center p-4 border-b border-gray-100 dark:border-gray-700/60 animate-pulse">
+                                    <div className="col-span-1 flex justify-center"><div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                                    <div className="col-span-4 lg:col-span-3 space-y-2">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                                        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3"></div>
+                                    </div>
+                                    <div className="col-span-2 flex flex-col items-end space-y-2">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                                    </div>
+                                    <div className="col-span-2 hidden md:block px-4">
+                                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-full"></div>
+                                    </div>
+                                    <div className="col-span-3 hidden lg:block px-2">
+                                        <div className="h-10 bg-gray-200 dark:bg-gray-700/50 rounded-lg w-full"></div>
+                                    </div>
+                                    <div className="col-span-2 lg:col-span-1 flex justify-end">
+                                        <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </motion.div>
                     ) : displayedTrends.length > 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -464,11 +496,10 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange, o
     return (
         <motion.div
             onClick={onClick}
-            variants={{
-                hidden: { opacity: 0, x: -10 },
-                show: { opacity: 1, x: 0 }
-            }}
-            className="group grid grid-cols-12 gap-4 items-center p-4 border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors last:border-0 cursor-pointer"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+            className="group grid grid-cols-12 gap-4 items-center p-4 border-b border-gray-100 dark:border-gray-700/60 hover:bg-white dark:hover:bg-gray-800/80 transition-all duration-300 last:border-0 cursor-pointer hover:shadow-lg hover:shadow-purple-500/5 sm:hover:scale-[1.01] hover:z-10 relative bg-transparent"
         >
             {/* Rank / Index */}
             <div className="col-span-1 text-center font-semibold text-gray-400 dark:text-gray-500">
@@ -529,15 +560,21 @@ function TrendRow({ trend, index, initialBookmarked = false, onBookmarkChange, o
             </div>
 
             {/* Mini Sparkline Chart */}
-            <div className="col-span-3 hidden lg:block h-12 w-full px-2">
+            <div className="col-span-3 hidden lg:block h-12 w-full px-2 group-hover:scale-105 transition-transform duration-300">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
+                        <defs>
+                            <linearGradient id={`colorVolRow-${index}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={isHot ? "#ef4444" : "#10b981"} stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor={isHot ? "#ef4444" : "#10b981"} stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
                         <Area
                             type="monotone"
                             dataKey="volume"
                             stroke={isHot ? "#ef4444" : "#10b981"}
                             strokeWidth={2}
-                            fill="transparent"
+                            fill={`url(#colorVolRow-${index})`}
                             isAnimationActive={false}
                         />
                     </AreaChart>
