@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, Bookmark, Medal } from 'lucide-react';
+import { Trophy, Bookmark, Medal } from 'lucide-react';
 
 export default function Leaderboard() {
     const [data, setData] = useState([]);
