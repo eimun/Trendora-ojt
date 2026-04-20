@@ -58,12 +58,19 @@ def login():
     email = data.get('email')
     password = data.get('password')
     
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, password_hash FROM users WHERE email = %s", (email,))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, password_hash FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
+    except Exception as e:
+        print(f"Login DB error: {e}")
+        return jsonify({"error": "Database error"}), 500
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
     
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
@@ -94,16 +101,22 @@ def get_profile():
         print(f"Token decode error: {e}")
         return jsonify({"error": "Invalid token"}), 401
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, email, created_at, default_niche FROM users WHERE id = %s", (user_id,))
-    user = cur.fetchone()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, email, created_at, default_niche FROM users WHERE id = %s", (user_id,))
+        user = cur.fetchone()
 
-    cur.execute("SELECT COUNT(*) FROM saved_trends WHERE user_id = %s", (user_id,))
-    saved_count = cur.fetchone()[0]
-
-    cur.close()
-    conn.close()
+        cur.execute("SELECT COUNT(*) FROM saved_trends WHERE user_id = %s", (user_id,))
+        saved_count = cur.fetchone()[0]
+    except Exception as e:
+        print(f"Profile fetch error: {e}")
+        return jsonify({"error": "Failed to fetch profile"}), 500
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -134,15 +147,23 @@ def update_preferences():
     if not niche:
         return jsonify({"error": "default_niche is required"}), 400
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE users SET default_niche = %s WHERE id = %s",
-        (niche, user_id)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET default_niche = %s WHERE id = %s",
+            (niche, user_id)
+        )
+        conn.commit()
+    except Exception as e:
+        if 'conn' in locals() and conn:
+            conn.rollback()
+        return jsonify({"error": "Failed to update preferences"}), 500
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
     return jsonify({"message": "Preferences updated successfully", "default_niche": niche}), 200
 
