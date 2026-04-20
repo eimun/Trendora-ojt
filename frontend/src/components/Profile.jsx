@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Settings, Save, CheckCircle2, Calendar, Bookmark, Mail, Shield, Sparkles } from 'lucide-react';
+import { Settings, Save, CheckCircle2, Calendar, Bookmark, Mail, Shield, Sparkles } from 'lucide-react';
 import { API_URL } from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
 
