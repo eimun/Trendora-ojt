@@ -130,7 +130,7 @@ function Dashboard() {
     });
     const [loading, setLoading] = useState(false);
     const [savedKeywords, setSavedKeywords] = useState(new Set());
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('dash_searchQuery') || '');
     const [selectedTrend, setSelectedTrend] = useState(() => {
         try { return JSON.parse(sessionStorage.getItem('dash_selectedTrend') || 'null'); } catch { return null; }
     });
@@ -218,6 +218,7 @@ function Dashboard() {
     useEffect(() => { sessionStorage.setItem('dash_geo', geo); }, [geo]);
     useEffect(() => { sessionStorage.setItem('dash_category', category); }, [category]);
     useEffect(() => { sessionStorage.setItem('dash_timeframe', timeframe); }, [timeframe]);
+    useEffect(() => { sessionStorage.setItem('dash_searchQuery', searchQuery); }, [searchQuery]);
 
     // Persist selectedTrend to sessionStorage so it survives navigation
     useEffect(() => {
