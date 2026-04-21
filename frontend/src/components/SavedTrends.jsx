@@ -232,8 +232,12 @@ function SavedTrends() {
                                                         <textarea
                                                             autoFocus
                                                             value={noteDraft}
-                                                            onChange={(e) => setNoteDraft(e.target.value)}
-                                                            className="w-full bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-600 rounded-lg p-4 text-sm focus:ring-2 focus:ring-purple-500 outline-none mb-3 resize-y min-h-[160px] leading-relaxed font-mono"
+                                                            onChange={(e) => {
+                                                                setNoteDraft(e.target.value);
+                                                                e.target.style.height = 'auto';
+                                                                e.target.style.height = `${e.target.scrollHeight}px`;
+                                                            }}
+                                                            className="w-full bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-600 rounded-lg p-4 text-sm focus:ring-2 focus:ring-purple-500 outline-none mb-3 resize-none overflow-hidden leading-relaxed font-mono"
                                                             placeholder="Write your content ideas or paste generated scripts here..."
                                                         />
                                                         <div className="flex gap-2 justify-end">
