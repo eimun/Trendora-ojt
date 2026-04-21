@@ -120,17 +120,24 @@ function FilterDropdown({ icon: Icon, value, options, onChange, accent }) {
 
 /* ───────── Main Dashboard ───────── */
 function Dashboard() {
-    const [geo, setGeo] = useState('US');
-    const [category, setCategory] = useState('all');
+    // ─── Restore from sessionStorage on mount
+    const [geo, setGeo] = useState(() => sessionStorage.getItem('dash_geo') || 'US');
+    const [category, setCategory] = useState(() => sessionStorage.getItem('dash_category') || 'all');
     const [sortBy, setSortBy] = useState('relevance');
     const [trendStatus, setTrendStatus] = useState('all');
-    const [allTrends, setAllTrends] = useState([]);
+    const [allTrends, setAllTrends] = useState(() => {
+        try { return JSON.parse(sessionStorage.getItem('dash_trends') || '[]'); } catch { return []; }
+    });
     const [loading, setLoading] = useState(false);
     const [savedKeywords, setSavedKeywords] = useState(new Set());
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTrend, setSelectedTrend] = useState(null);
-    const [trendsCache, setTrendsCache] = useState({});
-    const [timeframe, setTimeframe] = useState('now 1-d');
+    const [selectedTrend, setSelectedTrend] = useState(() => {
+        try { return JSON.parse(sessionStorage.getItem('dash_selectedTrend') || 'null'); } catch { return null; }
+    });
+    const [trendsCache, setTrendsCache] = useState(() => {
+        try { return JSON.parse(sessionStorage.getItem('dash_cache') || '{}'); } catch { return {}; }
+    });
+    const [timeframe, setTimeframe] = useState(() => sessionStorage.getItem('dash_timeframe') || 'now 1-d');
     const [lastUpdated, setLastUpdated] = useState(null);
 
     const fetchTrends = async (niche, geoCode, tf = timeframe) => {
@@ -138,6 +145,7 @@ function Dashboard() {
         
         if (trendsCache[cacheKey]) {
             setAllTrends(trendsCache[cacheKey]);
+            sessionStorage.setItem('dash_trends', JSON.stringify(trendsCache[cacheKey]));
             return;
         }
 
@@ -149,8 +157,14 @@ function Dashboard() {
                 { niche, geo: geoCode, timeframe: tf },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            setAllTrends(response.data.trends);
-            setTrendsCache(prev => ({ ...prev, [cacheKey]: response.data.trends }));
+            const trends = response.data.trends;
+            setAllTrends(trends);
+            sessionStorage.setItem('dash_trends', JSON.stringify(trends));
+            setTrendsCache(prev => {
+                const next = { ...prev, [cacheKey]: trends };
+                sessionStorage.setItem('dash_cache', JSON.stringify(next));
+                return next;
+            });
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Failed to fetch trends');
@@ -199,6 +213,16 @@ function Dashboard() {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Persist filter changes to sessionStorage
+    useEffect(() => { sessionStorage.setItem('dash_geo', geo); }, [geo]);
+    useEffect(() => { sessionStorage.setItem('dash_category', category); }, [category]);
+    useEffect(() => { sessionStorage.setItem('dash_timeframe', timeframe); }, [timeframe]);
+
+    // Persist selectedTrend to sessionStorage so it survives navigation
+    useEffect(() => {
+        sessionStorage.setItem('dash_selectedTrend', JSON.stringify(selectedTrend));
+    }, [selectedTrend]);
 
     // Re-fetch when geo, category, or timeframe changes
     useEffect(() => {
