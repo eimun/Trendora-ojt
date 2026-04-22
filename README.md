@@ -7,15 +7,16 @@ Trendora helps content creators discover trending topics, analyze competitor gap
 ## Tech Stack
 - **Backend**: Python / Flask / PostgreSQL
 - **Frontend**: React / Tailwind CSS / Framer Motion / Recharts
-- **AI**: Google Gemini API
+- **AI**: Groq API (Llama 3)
 - **APIs**: Google Trends, YouTube Data API
 - **Deployment**: Render (backend) + Vercel (frontend)
 
 ## Features
 - 📊 Real-time trend tracking across niches
-- 🎯 Competitor gap analysis
-- 🔮 Predictive trend forecasting
-- ✨ AI-powered content generation
+- 🏆 Community Leaderboard for top saved trends
+- 📈 Personal Analytics Dashboard
+- 📝 Saved Trends with AI note generation
+- ✨ AI-powered 60-second video script generation
 - 🎨 Personal writing style training
 - 🌙 Dark mode support
 - 📱 Collapsible sidebar navigation
