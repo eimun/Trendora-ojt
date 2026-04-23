@@ -178,7 +178,7 @@ function Dashboard() {
         fetchTrends(category, geo, timeframe);
     };
 
-    // On mount: load saved bookmarks + check user preference
+    // On mount: load saved bookmarks
     useEffect(() => {
         const init = async () => {
             const token = localStorage.getItem('token');
@@ -196,18 +196,6 @@ function Dashboard() {
                 console.error('Failed to load saved keywords', e);
             }
 
-            try {
-                const res = await axios.get(`${API_URL}/api/auth/profile`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (res.data.default_niche) {
-                    setCategory(res.data.default_niche);
-                    fetchTrends(res.data.default_niche, geo);
-                    return;
-                }
-            } catch (e) {
-                console.error('Failed to get preferences', e);
-            }
             fetchTrends('all', geo);
         };
         init();
