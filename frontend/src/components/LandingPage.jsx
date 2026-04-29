@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import {
     TrendingUp, Sparkles, BarChart3,
-    ArrowRight, Play,
-    CheckCircle2, ChevronRight, Moon, Sun
+    ArrowRight, Play, Zap, Shield, Globe,
+    CheckCircle2, ChevronRight, Moon, Sun,
+    MessageSquare, Bookmark, Trophy
 } from 'lucide-react';
 
 const features = [
     {
         icon: TrendingUp,
         title: 'Real-Time Trend Tracking',
-        desc: 'Monitor trending topics across niches with live Google Trends data. Get instant alerts when new opportunities emerge.',
+        desc: 'Monitor trending topics across niches with live Google Trends data and intelligent caching for blazing-fast results.',
         color: 'from-blue-500 to-cyan-500',
         shadow: 'shadow-blue-500/20'
     },
@@ -25,18 +26,51 @@ const features = [
     {
         icon: Sparkles,
         title: 'AI Content Generation',
-        desc: 'Generate YouTube-ready scripts, hooks, and hashtags powered by Gemini AI — in one click.',
+        desc: 'Generate video scripts, viral hooks, and content angles powered by Llama 3 AI — in one click.',
         color: 'from-purple-500 to-pink-500',
         shadow: 'shadow-purple-500/20'
     }
 ];
 
 const trendData = [
-    { name: 'AI Agents', volume: '1,438K', growth: '+12.7%', positive: true, bar: 85 },
-    { name: 'Quantum Computing', volume: '896K', growth: '+8.3%', positive: true, bar: 65 },
-    { name: 'Web3 Gaming', volume: '465K', growth: '+2.1%', positive: true, bar: 40 },
-    { name: 'Edge Computing', volume: '240K', growth: '+1.4%', positive: true, bar: 22 }
+    { name: 'AI Agents', volume: '1,438K', growth: '+12.7%', bar: 85 },
+    { name: 'Quantum Computing', volume: '896K', growth: '+8.3%', bar: 65 },
+    { name: 'Web3 Gaming', volume: '465K', growth: '+2.1%', bar: 40 },
+    { name: 'Edge Computing', volume: '240K', growth: '+1.4%', bar: 22 }
 ];
+
+const howItWorks = [
+    { step: '01', title: 'Pick Your Niche', desc: 'Select from Tech, Finance, Health, Lifestyle, or Entertainment categories.', icon: Globe },
+    { step: '02', title: 'Discover Trends', desc: 'Our engine scrapes Google Trends in real-time and ranks topics by virality.', icon: Zap },
+    { step: '03', title: 'Generate Content', desc: 'Click any trend to get AI-powered scripts, hooks, and angles — instantly.', icon: Sparkles },
+    { step: '04', title: 'Save & Dominate', desc: 'Bookmark trends, draft notes, and build your personal content vault.', icon: Shield }
+];
+
+// Animated counter component
+function AnimatedCounter({ target, suffix = '' }) {
+    const [count, setCount] = useState(0);
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true });
+
+    useEffect(() => {
+        if (!isInView) return;
+        let start = 0;
+        const duration = 2000;
+        const increment = target / (duration / 16);
+        const timer = setInterval(() => {
+            start += increment;
+            if (start >= target) {
+                setCount(target);
+                clearInterval(timer);
+            } else {
+                setCount(Math.floor(start));
+            }
+        }, 16);
+        return () => clearInterval(timer);
+    }, [isInView, target]);
+
+    return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
 
 function LandingPage() {
     const [isDark, setIsDark] = useState(false);
@@ -86,8 +120,8 @@ function LandingPage() {
             {/* ─── Hero ──────────────────────────────────────── */}
             <section className="pt-32 pb-20 px-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950"></div>
-                <div className="absolute top-20 left-1/4 w-96 h-96 bg-purple-200/30 dark:bg-purple-800/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-200/30 dark:bg-pink-800/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-20 left-1/4 w-96 h-96 bg-purple-200/30 dark:bg-purple-800/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-200/30 dark:bg-pink-800/10 rounded-full blur-3xl animate-pulse"></div>
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -96,7 +130,7 @@ function LandingPage() {
                     className="max-w-4xl mx-auto text-center relative z-10"
                 >
                     <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-8">
-                        <Sparkles size={14} /> Powered by Google Trends + Gemini AI
+                        <Sparkles size={14} /> Powered by Google Trends + Llama 3 AI
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">
                         Trend Intelligence,{' '}
@@ -116,6 +150,33 @@ function LandingPage() {
                         </button>
                     </div>
                 </motion.div>
+            </section>
+
+            {/* ─── Stats Bar ──────────────────────────────────── */}
+            <section className="py-12 px-6 border-y border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
+                <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                    {[
+                        { value: 500, suffix: '+', label: 'Trends Tracked Daily', icon: TrendingUp },
+                        { value: 10, suffix: '+', label: 'Content Niches', icon: Globe },
+                        { value: 300, suffix: 'ms', label: 'AI Response Time', icon: Zap },
+                        { value: 99, suffix: '%', label: 'Uptime Guarantee', icon: Shield }
+                    ].map((stat, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1 }}
+                            className="flex flex-col items-center"
+                        >
+                            <stat.icon size={20} className="text-purple-500 mb-2" />
+                            <span className="text-3xl md:text-4xl font-black bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                                <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+                            </span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">{stat.label}</span>
+                        </motion.div>
+                    ))}
+                </div>
             </section>
 
             {/* ─── Feature Cards ─────────────────────────────── */}
@@ -146,8 +207,42 @@ function LandingPage() {
                 </div>
             </section>
 
-            {/* ─── Trending Topics Preview ─────────────────── */}
+            {/* ─── How It Works ────────────────────────────────── */}
             <section className="py-24 px-6">
+                <div className="max-w-5xl mx-auto">
+                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+                        <h2 className="text-4xl font-black mb-4">How Trendora Works</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">From niche selection to viral content — in four simple steps.</p>
+                    </motion.div>
+                    <div className="grid md:grid-cols-4 gap-6">
+                        {howItWorks.map((item, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.12 }}
+                                className="relative text-center group"
+                            >
+                                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                                    <item.icon size={28} className="text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <span className="text-xs font-black text-purple-400 dark:text-purple-500 tracking-widest uppercase">Step {item.step}</span>
+                                <h3 className="text-lg font-bold mt-2 mb-2">{item.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{item.desc}</p>
+                                {i < 3 && (
+                                    <div className="hidden md:block absolute top-8 -right-3 w-6 text-gray-300 dark:text-gray-700">
+                                        <ChevronRight size={24} />
+                                    </div>
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ─── Trending Topics Preview ─────────────────── */}
+            <section className="py-24 px-6 bg-gray-50 dark:bg-gray-900/50">
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                         <h2 className="text-4xl font-black mb-6">See what's trending right now</h2>
@@ -198,6 +293,38 @@ function LandingPage() {
                 </div>
             </section>
 
+            {/* ─── Platform Highlights ─────────────────────── */}
+            <section className="py-24 px-6">
+                <div className="max-w-7xl mx-auto">
+                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+                        <h2 className="text-4xl font-black mb-4">More than just trends</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">Every tool a creator needs, built into one platform.</p>
+                    </motion.div>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[
+                            { icon: MessageSquare, title: 'AI Chatbot', desc: 'Ask questions about your live dashboard data — the bot sees what you see.', gradient: 'from-violet-500 to-purple-600' },
+                            { icon: Bookmark, title: 'Personal Vault', desc: 'Save trends before they disappear. Draft notes and build your content library.', gradient: 'from-amber-500 to-orange-600' },
+                            { icon: Trophy, title: 'Global Leaderboard', desc: 'See what dominated the internet this week — ranked by real search volume.', gradient: 'from-rose-500 to-pink-600' }
+                        ].map((item, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all group"
+                            >
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                                    <item.icon size={22} className="text-white" />
+                                </div>
+                                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* ─── CTA Footer ────────────────────────────────── */}
             <section className="py-24 px-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTEwIDBWMjBNMCAxMGgyMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iLjA1Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCBmaWxsPSJ1cmwoI2EpIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+')] opacity-50"></div>
@@ -211,8 +338,16 @@ function LandingPage() {
             </section>
 
             {/* ─── Footer ────────────────────────────────────── */}
-            <footer className="py-8 px-6 border-t border-gray-100 dark:border-gray-800 text-center">
-                <p className="text-sm text-gray-400">© 2026 Trendora. Built with ❤️ for content creators.</p>
+            <footer className="py-10 px-6 border-t border-gray-100 dark:border-gray-800">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <span className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Trendora</span>
+                    <p className="text-sm text-gray-400">© 2026 Trendora. Built with ❤️ for content creators.</p>
+                    <div className="flex gap-6 text-sm text-gray-400">
+                        <span className="hover:text-purple-500 cursor-pointer transition-colors">Privacy</span>
+                        <span className="hover:text-purple-500 cursor-pointer transition-colors">Terms</span>
+                        <a href="https://github.com/eimun/Trendora-ojt" target="_blank" rel="noreferrer" className="hover:text-purple-500 transition-colors">GitHub</a>
+                    </div>
+                </div>
             </footer>
         </div>
     );
