@@ -132,7 +132,7 @@ function LandingPage() {
                     <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-8">
                         <Sparkles size={14} /> Powered by Google Trends + Llama 3 AI
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight font-heading">
+                    <h1 className="text-5xl md:text-8xl font-normal mb-6 leading-[1.1] tracking-tight font-heading">
                         Trend Intelligence,{' '}
                         <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                             Simplified
@@ -183,7 +183,7 @@ function LandingPage() {
             <section className="py-24 px-6 bg-gray-50 dark:bg-gray-900/50">
                 <div className="max-w-7xl mx-auto">
                     <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-                        <h2 className="text-4xl font-black mb-4 font-heading">Everything you need to dominate trends</h2>
+                        <h2 className="text-4xl font-normal mb-4 font-heading">Everything you need to dominate trends</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">Three powerful modules working together to give you an unfair advantage.</p>
                     </motion.div>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -211,7 +211,7 @@ function LandingPage() {
             <section className="py-24 px-6">
                 <div className="max-w-5xl mx-auto">
                     <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-                        <h2 className="text-4xl font-black mb-4 font-heading">How Trendora Works</h2>
+                        <h2 className="text-4xl font-normal mb-4 font-heading">How Trendora Works</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">From niche selection to viral content — in four simple steps.</p>
                     </motion.div>
                     <div className="grid md:grid-cols-4 gap-6">
@@ -245,7 +245,7 @@ function LandingPage() {
             <section className="py-24 px-6 bg-gray-50 dark:bg-gray-900/50">
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <h2 className="text-4xl font-black mb-6 font-heading">See what's trending right now</h2>
+                        <h2 className="text-4xl font-normal mb-6 font-heading">See what's trending right now</h2>
                         <ul className="space-y-5">
                             {[
                                 'Track trending keywords across tech, finance, lifestyle, and health niches',
@@ -297,7 +297,7 @@ function LandingPage() {
             <section className="py-24 px-6">
                 <div className="max-w-7xl mx-auto">
                     <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-                        <h2 className="text-4xl font-black mb-4 font-heading">More than just trends</h2>
+                        <h2 className="text-4xl font-normal mb-4 font-heading">More than just trends</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto">Every tool a creator needs, built into one platform.</p>
                     </motion.div>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -329,7 +329,7 @@ function LandingPage() {
             <section className="py-24 px-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTEwIDBWMjBNMCAxMGgyMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iLjA1Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCBmaWxsPSJ1cmwoI2EpIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+')] opacity-50"></div>
                 <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl mx-auto text-center relative z-10">
-                    <h2 className="text-4xl md:text-5xl font-black text-white mb-6 font-heading">Ready to ride the next big trend?</h2>
+                    <h2 className="text-4xl md:text-5xl font-normal text-white mb-6 font-heading">Ready to ride the next big trend?</h2>
                     <p className="text-purple-100 text-xl mb-10">Join Trendora today and turn data into viral content.</p>
                     <Link to="/login" className="bg-white text-purple-700 px-10 py-4 rounded-xl text-lg font-black hover:shadow-2xl hover:-translate-y-1 transition-all inline-flex items-center gap-2">
                         Start Free <ArrowRight size={20} />
