@@ -3,7 +3,7 @@ from flask import request, jsonify
 import time
 
 def rate_limiter(max_requests=30, window_seconds=60):
-    """Simple in-memory rate limiter per IP"""
+    """Simple in-memory rate limiter per IP to prevent API abuse."""
     requests_log = {}
 
     def decorator(f):
