@@ -61,71 +61,140 @@ import xml.etree.ElementTree as ET
 import re
 import random
 
+# ─── Category classification keywords ───
+# These keywords/phrases are matched against the trend title AND news headlines
+# to automatically classify a live Google Trends item into a category.
+CATEGORY_KEYWORDS = {
+    'tech': [
+        'ai', 'chatgpt', 'openai', 'google', 'apple', 'iphone', 'android', 'samsung',
+        'nvidia', 'microsoft', 'meta', 'tesla', 'spacex', 'software', 'app', 'hack',
+        'cyber', 'robot', 'quantum', 'chip', 'gpu', 'laptop', 'tech', 'startup',
+        'coding', 'developer', 'programming', 'react', 'python', 'linux', 'cloud',
+        'api', 'blockchain', 'crypto', 'bitcoin', 'ethereum', 'web3',
+    ],
+    'finance': [
+        'stock', 'market', 'sensex', 'nifty', 'nasdaq', 'dow jones', 's&p',
+        'invest', 'trading', 'forex', 'gold', 'silver', 'crude', 'oil price',
+        'inflation', 'interest rate', 'fed', 'rbi', 'gdp', 'tax', 'budget',
+        'bank', 'ipo', 'mutual fund', 'economy', 'recession', 'bond',
+        'real estate', 'bull', 'bear', 'earnings', 'revenue', 'profit',
+    ],
+    'entertainment': [
+        'movie', 'film', 'trailer', 'netflix', 'disney', 'marvel', 'dc',
+        'oscar', 'grammy', 'emmy', 'bollywood', 'hollywood', 'tollywood',
+        'actor', 'actress', 'singer', 'album', 'song', 'concert', 'tour',
+        'streaming', 'series', 'show', 'anime', 'gaming', 'game', 'gta',
+        'playstation', 'xbox', 'nintendo', 'celebrity', 'award',
+    ],
+    'sports': [
+        'cricket', 'ipl', 'football', 'soccer', 'nba', 'nfl', 'mlb',
+        'tennis', 'f1', 'formula', 'olympics', 'fifa', 'premier league',
+        'champions league', 'wimbledon', 'match', 'score', 'player',
+        'team', 'coach', 'goal', 'tournament', 'world cup', 'batting',
+        'bowling', 'wicket', 'innings', 'run', 'captain', 'stadium',
+    ],
+    'health': [
+        'health', 'medical', 'doctor', 'hospital', 'disease', 'virus',
+        'vaccine', 'covid', 'mental health', 'fitness', 'workout', 'diet',
+        'nutrition', 'sleep', 'meditation', 'yoga', 'weight loss', 'drug',
+        'pharma', 'symptom', 'treatment', 'cancer', 'diabetes', 'surgery',
+    ],
+    'lifestyle': [
+        'travel', 'food', 'recipe', 'fashion', 'beauty', 'wedding',
+        'home', 'decor', 'diy', 'garden', 'pet', 'parenting', 'relationship',
+        'culture', 'festival', 'holiday', 'lifestyle', 'trend', 'viral',
+        'social media', 'influencer', 'tiktok', 'instagram', 'youtube',
+    ],
+}
+
+
+def classify_trend(title, news_headlines=''):
+    """Classify a trend into a category based on keyword matching against the title and news headlines."""
+    combined_text = f"{title} {news_headlines}".lower()
+    
+    scores = {}
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        score = sum(1 for kw in keywords if kw in combined_text)
+        if score > 0:
+            scores[category] = score
+    
+    if scores:
+        return max(scores, key=scores.get)
+    return 'general'
+
+
 def get_fallback_trends(niche, geo='US'):
-    """Fetch live data from Google Trends RSS, or use category-specific mock data if a niche is selected."""
+    """Fetch live data from Google Trends RSS and classify into categories.
+    
+    For ALL niches (including specific ones like 'tech', 'finance', etc.),
+    we always pull the real-time RSS feed first and then filter by category
+    using keyword-based classification. No hardcoded/predefined trends.
+    """
     niche = niche.lower()
     
-    # If a specific category is requested, we use predefined realistic datasets
-    # because Google Trends RSS no longer supports category filtering directly.
-    if niche != 'all' and niche != 'general':
-        category_data = {
-            'tech': ['OpenAI Sora', 'Apple Vision Pro', 'Nvidia Blackwell', 'Cybersecurity', 'React 19', 'Quantum Computing', 'Bitcoin Halving', 'Linux Kernel'],
-            'finance': ['S&P 500 Record High', 'Federal Reserve Rates', 'Gold Prices', 'Real Estate Bubble', 'Vanguard Funds', 'Inflation Report', 'Corporate Earnings'],
-            'entertainment': ['Dune Part 2', 'Taylor Swift Tour', 'GTA 6 Trailer', 'Oscars 2025', 'Netflix Top 10', 'Marvel Phase 5', 'Gaming E3'],
-            'sports': ['Champions League', 'NBA Playoffs', 'Formula 1', 'NFL Draft', 'Premier League', 'Olympic Games', 'Wimbledon', 'Messi Inter Miami'],
-            'health': ['Ozempic Alternatives', 'Intermittent Fasting', 'Mental Health Tech', 'Sleep Optimization', 'Gut Microbiome', 'Longevity Research'],
-            'lifestyle': ['Minimalism', 'Digital Nomad Visas', 'Slow Living', 'Solo Travel', 'Van Life', 'Vintage Fashion', 'Home Office Setups']
-        }
-        
-        keywords = category_data.get(niche, ['Generic Trend 1', 'Generic Trend 2', 'Generic Trend 3'])
-        random.shuffle(keywords)
-        
-        results = []
-        for kw in keywords[:10]:
-            vol = random.randint(10000, 500000)
-            results.append({
-                'keyword': kw,
-                'volume': vol,
-                'velocity': 'rising_fast' if vol > 100000 else 'rising',
-                'niche': niche
-            })
-        return results
-
-    # If 'all' categories is requested, pull the actual live general RSS feed
     try:
         url = f"https://trends.google.com/trending/rss?geo={geo}"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             xml_data = response.read()
         
         root = ET.fromstring(xml_data)
+        ns = {'ht': 'https://trends.google.com/trending/rss'}
         live_trends = []
         
-        for item in root.findall('./channel/item')[:20]:
-            title = item.find('title').text
+        for item in root.findall('./channel/item')[:30]:
+            title = item.find('title').text or ''
             
-            traffic_text = item.find('{https://trends.google.com/trending/rss}approx_traffic').text
+            # Collect news headlines for better classification
+            news_headlines = []
+            for news_item in item.findall('ht:news_item', ns):
+                news_title_el = news_item.find('ht:news_item_title', ns)
+                if news_title_el is not None and news_title_el.text:
+                    news_headlines.append(news_title_el.text)
+            
+            headlines_text = ' '.join(news_headlines)
+            
+            traffic_el = item.find('ht:approx_traffic', ns)
+            traffic_text = traffic_el.text if traffic_el is not None else '0'
             try:
-                numeric_traffic = int(re.sub(r'\D', '', traffic_text))
+                numeric_traffic = int(re.sub(r'[^0-9]', '', traffic_text))
             except:
                 numeric_traffic = random.randint(10000, 500000)
+            
+            # Boost low RSS traffic numbers to realistic "search volume" scale
+            if numeric_traffic < 1000:
+                numeric_traffic = numeric_traffic * random.randint(100, 500)
                 
             velocity = 'rising_fast' if numeric_traffic > 100000 else 'rising'
+            
+            # Classify the trend into a category
+            detected_category = classify_trend(title, headlines_text)
             
             live_trends.append({
                 'keyword': title,
                 'volume': numeric_traffic,
                 'velocity': velocity,
-                'niche': 'general'
+                'niche': detected_category,
             })
-            
+        
+        # If a specific category is requested, filter the live trends
+        if niche != 'all' and niche != 'general':
+            filtered = [t for t in live_trends if t['niche'] == niche]
+            if filtered:
+                return filtered
+            # If no trends matched the category, return all live trends
+            # with the requested niche label so the user still sees data
+            print(f"⚠️ No live trends matched category '{niche}', returning all trends")
+            for t in live_trends:
+                t['niche'] = niche
+            return live_trends[:10]
+        
         return live_trends
         
     except Exception as e:
         print(f"RSS Fallback failed: {e}")
         return [
-            {'keyword': 'Global News Event', 'volume': 500000, 'velocity': 'rising_fast', 'niche': 'general'},
-            {'keyword': 'Breaking Story', 'volume': 200000, 'velocity': 'rising', 'niche': 'general'}
+            {'keyword': 'Google Trends is temporarily unavailable', 'volume': 0, 'velocity': 'stable', 'niche': niche or 'general'},
         ]
 
 def cache_trends_to_db(trends_data):

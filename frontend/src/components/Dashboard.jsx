@@ -178,8 +178,13 @@ function Dashboard() {
         fetchTrends(category, geo, timeframe);
     };
 
-    // On mount: load saved bookmarks
+    // On mount: load saved bookmarks and clear stale trend cache
     useEffect(() => {
+        // Clear any previously cached trends to ensure fresh live data
+        sessionStorage.removeItem('dash_cache');
+        sessionStorage.removeItem('dash_trends');
+        setTrendsCache({});
+
         const init = async () => {
             const token = localStorage.getItem('token');
 
